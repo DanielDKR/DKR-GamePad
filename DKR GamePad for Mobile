@@ -1,0 +1,278 @@
+
+<!DOCTYPE html>
+<html lang="pt-PT">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<meta name="theme-color" content="#090b14">
+<title>DKR Floating Gamepad</title>
+
+<style>
+*{box-sizing:border-box}
+html,body{
+ margin:0;width:100%;height:100%;
+ background:#090b14;color:#fff;
+ font-family:Arial,sans-serif;overflow:hidden
+}
+body{display:flex;flex-direction:column}
+header{
+ padding:13px;background:#151a30;color:#35d9ff;
+ font-weight:900;text-align:center;letter-spacing:.06em;
+ flex-shrink:0
+}
+#bar{
+ display:flex;gap:6px;padding:9px;
+ background:#0c1020;flex-shrink:0
+}
+#url{
+ flex:1;min-width:0;width:0;padding:11px;
+ border-radius:8px;border:1px solid #384363;
+ background:#151a2b;color:#fff;font-size:14px
+}
+button{
+ cursor:pointer;touch-action:none;user-select:none;
+ -webkit-user-select:none;font-family:inherit
+}
+#open,#fullscreen{
+ border:0;border-radius:8px;padding:10px 12px;
+ font-weight:800
+}
+#open{background:#7c5cff;color:white}
+#fullscreen{background:#35d9ff;color:#090b14;font-size:17px}
+#stage{
+ position:relative;flex:1;min-height:0;
+ background:#05060a;overflow:hidden
+}
+#game{
+ position:absolute;inset:0;width:100%;height:100%;
+ border:0;background:#05060a
+}
+#status{
+ position:absolute;z-index:3;top:8px;left:8px;right:8px;
+ padding:8px 10px;border-radius:8px;
+ background:#111827e8;font-size:12px;
+ pointer-events:none
+}
+#pad{position:absolute;inset:0;z-index:4;pointer-events:none}
+.group{position:absolute;bottom:22px;pointer-events:auto}
+#directions{left:14px;width:144px;height:144px}
+#actions{right:14px;width:150px;height:150px}
+.key{
+ position:absolute;display:flex;align-items:center;
+ justify-content:center;width:46px;height:46px;
+ border:1px solid #ffffff80;border-radius:12px;
+ background:#293455dd;color:white;font-size:18px;
+ font-weight:bold;box-shadow:0 3px 12px #0005;
+ backdrop-filter:blur(4px);
+ -webkit-backdrop-filter:blur(4px)
+}
+.key:active,.key.down{background:#7c5cff;border-color:#fff}
+#up{left:49px;top:0}
+#down{left:49px;bottom:0}
+#left{left:0;top:49px}
+#right{right:0;top:49px}
+.action{width:54px;height:54px;border-radius:50%}
+#Y{right:48px;top:0;background:#b68b25dd}
+#X{left:0;top:48px;background:#268bc5dd}
+#B{right:0;top:48px;background:#c63855dd}
+#A{right:48px;bottom:0;background:#20875bdd}
+#tools{
+ position:absolute;left:50%;bottom:8px;
+ transform:translateX(-50%);display:flex;gap:6px;
+ pointer-events:auto;white-space:nowrap
+}
+#tools button{
+ color:white;background:#252d46dd;
+ border:1px solid #ffffff50;border-radius:8px;
+ padding:8px 10px;font-size:11px;font-weight:bold
+}
+body.fullscreen header,
+body.fullscreen #bar,
+body.fullscreen #status{display:none}
+body.fullscreen #stage{
+ height:100%;height:100dvh;flex:1
+}
+body.fullscreen #directions{left:18px;bottom:20px}
+body.fullscreen #actions{right:18px;bottom:20px}
+body.fullscreen #tools{bottom:12px}
+@media(max-width:400px){
+ #directions{transform:scale(.85);transform-origin:bottom left}
+ #actions{transform:scale(.85);transform-origin:bottom right}
+}
+@media(orientation:landscape){
+ #directions{left:20px;bottom:12px}
+ #actions{right:20px;bottom:12px}
+}
+</style>
+</head>
+
+<body>
+<header>DKR FLOATING GAMEPAD</header>
+
+<div id="bar">
+ <input id="url" type="url" inputmode="url"
+ placeholder="Cola o link do jogo..." aria-label="Link do jogo">
+ <button id="open">ABRIR</button>
+ <button id="fullscreen" aria-label="Tela cheia" title="Tela cheia">⛶</button>
+</div>
+
+<main id="stage">
+ <iframe id="game" title="Jogo"
+ allow="fullscreen; autoplay; gamepad"
+ referrerpolicy="strict-origin-when-cross-origin"></iframe>
+
+ <div id="status">
+  Cola o link de um jogo HTML5 e carrega em ABRIR.
+ </div>
+
+ <div id="pad">
+  <div id="directions" class="group">
+   <button class="key" id="up" data-key="ArrowUp">▲</button>
+   <button class="key" id="down" data-key="ArrowDown">▼</button>
+   <button class="key" id="left" data-key="ArrowLeft">◀</button>
+   <button class="key" id="right" data-key="ArrowRight">▶</button>
+  </div>
+
+  <div id="actions" class="group">
+   <button class="key action" id="Y" data-key="KeyY">Y</button>
+   <button class="key action" id="X" data-key="KeyX">X</button>
+   <button class="key action" id="B" data-key="KeyB">B</button>
+   <button class="key action" id="A" data-key="KeyA">A</button>
+  </div>
+
+  <div id="tools">
+   <button data-key="Escape">SELECT</button>
+   <button data-key="Enter">START</button>
+   <button id="toggle">OCULTAR</button>
+  </div>
+ </div>
+</main>
+
+<script>
+const game=document.getElementById("game");
+const statusBox=document.getElementById("status");
+const urlInput=document.getElementById("url");
+
+document.getElementById("open").addEventListener("click",openGame);
+
+urlInput.addEventListener("keydown",event=>{
+ if(event.key==="Enter")openGame();
+});
+
+function openGame(){
+ let address=urlInput.value.trim();
+
+ if(!address){
+  statusBox.textContent="Insere primeiro o link do jogo.";
+  return;
+ }
+
+ if(!/^https?:\/\//i.test(address)){
+  address="https://"+address;
+ }
+
+ try{
+  const parsed=new URL(address);
+
+  if(!["http:","https:"].includes(parsed.protocol)){
+   throw new Error("Link inválido");
+  }
+
+  game.src=parsed.href;
+  statusBox.textContent=
+   "A carregar o jogo. Alguns sites bloqueiam iframes.";
+ }catch(error){
+  statusBox.textContent="O endereço não é válido.";
+ }
+}
+
+function sendKey(type,code){
+ try{
+  const win=game.contentWindow;
+  const doc=game.contentDocument;
+
+  if(!win||!doc)return false;
+
+  const keys={
+   ArrowUp:"ArrowUp",
+   ArrowDown:"ArrowDown",
+   ArrowLeft:"ArrowLeft",
+   ArrowRight:"ArrowRight",
+   KeyA:"a",
+   KeyB:"b",
+   KeyX:"x",
+   KeyY:"y",
+   Enter:"Enter",
+   Escape:"Escape"
+  };
+
+  const event=new win.KeyboardEvent(type,{
+   key:keys[code]||code,
+   code:code,
+   bubbles:true,
+   cancelable:true
+  });
+
+  (doc.activeElement||doc).dispatchEvent(event);
+  return true;
+ }catch(error){
+  statusBox.textContent=
+   "O navegador bloqueou o envio de teclas para este jogo externo.";
+  return false;
+ }
+}
+
+document.querySelectorAll("[data-key]").forEach(button=>{
+ const code=button.dataset.key;
+
+ button.addEventListener("pointerdown",event=>{
+  event.preventDefault();
+  try{button.setPointerCapture(event.pointerId)}catch(error){}
+  button.classList.add("down");
+  sendKey("keydown",code);
+ });
+
+ function release(){
+  button.classList.remove("down");
+  sendKey("keyup",code);
+ }
+
+ button.addEventListener("pointerup",release);
+ button.addEventListener("pointercancel",release);
+ button.addEventListener("lostpointercapture",release);
+});
+
+document.getElementById("toggle").addEventListener("click",function(){
+ const pad=document.getElementById("pad");
+ const hidden=pad.style.display==="none";
+
+ pad.style.display=hidden?"block":"none";
+ this.textContent=hidden?"OCULTAR":"MOSTRAR";
+});
+
+document.getElementById("fullscreen").addEventListener("click",async function(){
+ document.body.classList.add("fullscreen");
+
+ try{
+  if(!document.fullscreenElement){
+   await document.documentElement.requestFullscreen();
+  }
+ }catch(error){
+  // Mantém o modo visual sem barras quando possível.
+ }
+});
+
+document.addEventListener("fullscreenchange",()=>{
+ if(!document.fullscreenElement){
+  document.body.classList.remove("fullscreen");
+ }
+});
+
+document.addEventListener("keydown",event=>{
+ if(event.key==="Escape"&&document.fullscreenElement){
+  document.exitFullscreen().catch(()=>{});
+ }
+});
+</script>
+</body>
+</html>
