@@ -19,7 +19,7 @@ header{
  padding:13px;background:#151a30;color:#35d9ff;
  font-weight:900;text-align:center;letter-spacing:.06em;
  flex-shrink:0
-}
+} 
 #bar{
  display:flex;gap:6px;padding:9px;
  background:#0c1020;flex-shrink:0
